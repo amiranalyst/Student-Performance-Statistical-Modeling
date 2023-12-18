@@ -1,0 +1,323 @@
+#Import Dataset
+install.packages("readxl")
+library(readxl)
+file_path <- "C:\\Users\\aj226\\Downloads\\Student_Performance.xlsx"
+data <- read_excel(file_path)
+head(data)
+attach(data)
+
+# Data Cleaning
+if (any(is.na(data))) {
+   print("There are missing values in the dataset.")
+  } else {
+        print("There is no missing value in the dataset.")
+    }
+
+names(data)
+
+# Descriptive Statistics
+numerical_variables <- c("Previous Scores", "Sample Question Papers Practiced", "Performance Index")
+
+for (variable in numerical_variables) {
+  
+  mean_value <- mean(data[[variable]])
+
+  median_value <- median(data[[variable]])
+  
+    std_dev <- sd(data[[variable]])
+  
+  iqr_value <- IQR(data[[variable]])
+  
+   min_value <- min(data[[variable]])
+  
+    max_value <- max(data[[variable]])
+  
+  confidence_interval <- t.test(data[[variable]])$conf.int
+  
+  
+  cat("Variable:", variable, "\n")
+  cat("Mean:", mean_value, "\n")
+  cat("Median:", median_value, "\n")
+  cat("Standard Deviation:", std_dev, "\n")
+  cat("IQR:", iqr_value, "\n")
+  cat("Minimum:", min_value, "\n")
+  cat("Maximum:", max_value, "\n")
+  cat("95% Confidence Interval: [", confidence_interval[1], ", ", confidence_interval[2], "]\n\n")
+}
+
+table(`Hours Studied`)
+table(`Hours Studied`)
+table(`Hours Studied`)
+
+
+# Visualization
+# Barplot and Histogram
+
+install.packages("ggplot2")
+install.packages("gridExtra")
+library(ggplot2)
+library(gridExtra)
+
+barplot1 <- ggplot(data, aes(x = `Hours Studied`, fill = `Hours Studied`)) +
+  geom_bar() +
+  ggtitle("Hours Studied Distribution") +
+  theme(legend.position = "none")
+
+barplot2 <- ggplot(data, aes(x = `Extracurricular Activities`, fill = `Extracurricular Activities`)) +
+  geom_bar() +
+  ggtitle("Extracurricular Activities Distribution") +
+  theme(legend.position = "none")
+
+barplot3 <- ggplot(data, aes(x = `Sleep Hours category`, fill = `Sleep Hours category`)) +
+  geom_bar() +
+  ggtitle("Sleep Hours Distribution") +
+  theme(legend.position = "none")
+
+histogram1 <- ggplot(data, aes(x = `Previous Scores`)) +
+  geom_histogram(binwidth = 5, fill = "skyblue", color = "black") +
+  ggtitle("Previous Scores Distribution")
+
+histogram2 <- ggplot(data, aes(x = `Sample Question Papers Practiced`)) +
+  geom_histogram(binwidth = 1, fill = "green", color = "black") +
+  ggtitle("Sample Question Papers Practiced Distribution")
+
+histogram3 <- ggplot(data, aes(x = `Performance Index`)) +
+  geom_histogram(binwidth = 5, fill = "orange", color = "black") +
+  ggtitle("Performance Index Distribution")
+
+categorical_plot <- grid.arrange(barplot1, barplot2, barplot3, ncol = 3)
+continuous_plot <- grid.arrange(histogram1, histogram2, histogram3, ncol = 3)
+
+# Boxplot
+par(mfrow = c(1,3))
+boxplot(`Previous Scores`, main = "Previous Scores", col = "dodgerblue")
+boxplot(`Sample Question Papers Practiced`, main = "Sample Question Papers Practiced", col = "coral")
+boxplot(`Performance Index`, main = "Performance Index", col = "Yellow")
+
+par(mfrow = c(1, 3))
+qqnorm(data$`Previous Scores`)
+qqline(data$`Previous Scores`, col = 2)
+title(main = "QQ Plot for Previous Scores")
+
+
+qqnorm(data$`Sample Question Papers Practiced`)
+qqline(data$`Sample Question Papers Practiced`, col = 2)
+title(main = "QQ Plot for Sample Question Papers Practiced")
+
+
+qqnorm(data$`Performance Index`)
+qqline(data$`Performance Index`, col = 2)
+title(main = "QQ Plot for Performance Index")
+
+par(mfrow = c(1, 1))
+
+
+
+# Confidence Interval for respond variable based on each categorical variable
+hours_studied_ci <- tapply(data$`Performance Index`, data$`Hours Studied`, function(x) t.test(x)$conf.int)
+print("Confidence Intervals for Hours Studied:")
+print(hours_studied_ci)
+
+extracurricular_ci <- tapply(data$`Performance Index`, data$`Extracurricular Activities`, function(x) t.test(x)$conf.int)
+print("Confidence Intervals for Extracurricular Activities:")
+print(extracurricular_ci)
+
+sleep_hours_ci <- tapply(data$`Performance Index`, data$`Sleep Hours category`, function(x) t.test(x)$conf.int)
+print("Confidence Intervals for Sleep Hours category:")
+print(sleep_hours_ci)
+
+# Bootstrap
+install.packages("boot")
+library(boot)
+ms <- numeric(10000)
+for (i in 1:10000){
+  ms[i] <- mean(sample(`Performance Index`, length(`Performance Index`),replace=TRUE, prob=NULL)) }
+
+quantile(ms,c(0.025,0.975))
+
+mean(`Performance Index`)-quantile(ms,c(0.025,0.975))
+
+1.96*sqrt(var(`Performance Index`)/length(`Performance Index`))
+
+mymean <- function(Performance,i) mean(`Performance Index`[i])
+
+myboot <- boot(`Performance Index`,mymean,R=10000)
+myboot
+
+mean(`Performance Index`)
+mean(myboot$t)-mean(`Performance Index`)
+sqrt(var(myboot$t))
+
+par(mfrow=c(2,1))
+hist(x = ms, main = "Histogram of Bootstrapped Mean Estimates for 'Performance'", xlab = "Mean Estimates",ylab = "Frequency", col = "lightblue", border = "black")
+
+hist(x = myboot$t, main = "Histogram of Bootstrapped Mean Performance", xlab = "Mean Performance", ylab = "Frequency", col = "lightgreen", border = "black")
+
+mean(`Performance Index`)-quantile(myboot$t,c(0.025,0.975))
+boot.ci(myboot)
+quantile(myboot$t,c(0.025,0.975))
+
+# Error bars
+install.packages("ggplot2")
+library(ggplot2)
+install.packages("Hmisc")
+library(Hmisc)
+
+ggplot(data, aes(x = factor(`Hours Studied`), y = `Performance Index`, fill = factor(`Hours Studied`))) +
+       stat_summary(fun.data = "mean_cl_normal", geom = "bar", position = position_dodge(width = 0.9)) +
+       geom_errorbar(stat = "summary", fun.data = "mean_cl_normal", position = position_dodge(width = 0.9), width = 0.25) +
+       labs(x = "Hours Studied", y = "Performance Index", fill = "Hours Studied") +
+       theme_minimal()
+
+ggplot(data, aes(x = factor(`Extracurricular Activities`), y = `Performance Index`, fill = factor(`Extracurricular Activities`))) +
+       stat_summary(fun.data = "mean_cl_normal", geom = "bar", position = position_dodge(width = 0.9)) +
+       geom_errorbar(stat = "summary", fun.data = "mean_cl_normal", position = position_dodge(width = 0.9), width = 0.25) +
+       labs(x = "Hours Studied", y = "Performance Index", fill = "Extracurricular Activities") +
+       theme_minimal()
+
+ggplot(data, aes(x = factor(`Sleep Hours category`), y = `Performance Index`, fill = factor(`Sleep Hours category`))) +
+       stat_summary(fun.data = "mean_cl_normal", geom = "bar", position = position_dodge(width = 0.9)) +
+     geom_errorbar(stat = "summary", fun.data = "mean_cl_normal", position = position_dodge(width = 0.9), width = 0.25) +
+       labs(x = "Hours Studied", y = "Performance Index", fill = "Sleep Hours category") +
+       theme_minimal()
+
+# Regression Models 
+
+model1 = lm(`Performance Index` ~ `Previous Scores`, data = data) 
+model2 = lm(`Performance Index` ~ `Previous Scores` + `Sample Question Papers Practiced`, data = data) 
+
+plot(`Performance Index`, `Previous Scores`, main = "Performance Index Vs Previous Scores", xlab = "Previous Scores", ylab = "Performance Index", col = "blue") 
+
+abline(model1, col = "red", lwd = 3) 
+abline(model2, col = "black", lwd = 3) 
+
+# Summary of the model performance 
+# First Model (Simple Linear Regression) 
+
+summary(model1) 
+anova(model1) 
+
+
+# Second Model (Multiple Linear Regression) 
+
+summary(model2) 
+anova(model2) 
+
+
+# Diagnostic plots for model1 
+
+par(mfrow = c(2, 2)) 
+plot(model1) 
+
+
+# Diagnostic plots for model2 
+
+par(mfrow = c(2, 2)) 
+plot(model2) 
+
+
+# Compare models 
+# model1 and model2 
+
+anova(model1, model2, test="Chi") 
+
+# Calculate AIC for each model 
+
+aic_model1 <- AIC(model1) 
+aic_model2 <- AIC(model2) 
+
+
+# Print AIC values 
+
+cat("AIC for Model 1:", aic_model1, "\n") 
+cat("AIC for Model 2:", aic_model2, "\n") 
+
+
+# Compare AIC values 
+
+if (aic_model1 < aic_model2) { 
+  
+  cat("Model 1 is preferred (lower AIC)\n") 
+  
+} else if (aic_model1 > aic_model2) { 
+  
+  cat("Model 2 is preferred (lower AIC)\n") 
+  
+} else { 
+  
+  cat("Both models are equivalent (similar AIC)\n") 
+  
+} 
+
+anova(model1, model2,chi) 
+
+# Ancova Models 
+# Ancova (`Hours Studied` and `Previous Scores`) 
+# Build the ANCOVA models 
+
+Ancova1 <- lm(`Performance Index` ~ `Previous Scores` * `Hours Studied`, data = data) 
+
+summary(Ancova1) 
+
+Ancova2 <- update(Ancova1, ~ . - `Hours Studied`:`Previous Scores`) 
+summary(Ancova2) 
+anova(Ancova2) 
+
+# Scatter plot with different colors for factor levels 
+
+`Hours Studied` <- as.factor(`Hours Studied`) 
+
+plot(`Previous Scores`, `Performance Index`, pch = 16, col = c("green", "pink", "yellow")[as.numeric(`Hours Studied`)], 
+     
+     xlab = "Previous Scores", ylab = "Performance Index") 
+
+# Add linear regression lines for different factor levels 
+
+abline(lm(`Performance Index` ~ `Previous Scores`, data = data, subset = `Hours Studied` == "Low"), col = "red") 
+abline(lm(`Performance Index` ~ `Previous Scores`, data = data, subset = `Hours Studied` == "Not Bad"), col = "blue") 
+abline(lm(`Performance Index` ~ `Previous Scores`, data = data, subset = `Hours Studied` == "Good"), col = "purple") 
+
+# Add legend 
+
+legend("topleft", legend = levels(`Hours Studied`), col = c("green", "pink", 'yellow'), pch = 16) 
+
+anova(Ancova1, Ancova2) 
+
+
+#comparison 
+
+anova(Ancova1, Ancova2) 
+
+#Comparing ANCOVA and Regression 
+
+aic_model1 <- AIC(model1) 
+aic_Ancova2 <- AIC(Ancova2) 
+
+# Print AIC values 
+
+cat("AIC for Model 1:", aic_model1, "\n") 
+cat("AIC for Model 2:", aic_Ancova2, "\n") 
+
+# Compare AIC values 
+
+if (aic_model1 < aic_Ancova2) { 
+  
+  cat("Model 1 is preferred (lower AIC)\n") 
+  
+} else if (aic_model1 > aic_Ancova2) { 
+  
+  cat("Ancova 2 is preferred (lower AIC)\n") 
+  
+} else { 
+  
+  cat("Both models are equivalent (similar AIC)\n") 
+  
+} 
+
+aic_modelreg <- AIC(model2) 
+
+aic_modelAncova <- AIC(Ancova2) 
+
+cat("AIC for Model reg:", aic_modelreg, "\n") 
+
+cat("AIC for Model ancova:", aic_modelAncova, "\n") 
